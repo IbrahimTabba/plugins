@@ -131,7 +131,7 @@ public class WebViewFlutterPlugin implements FlutterPlugin , ActivityAware , Plu
         FlutterWebView.uploadMessage = null;
       }
     }
-    else{
+    else if(i == FlutterWebView.REQUEST_SELECT_FILE && intent == null){
       FlutterWebView.uploadMessage.onReceiveValue(null);
       //FlutterWebView.uploadMessage.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(i1, intent));
       FlutterWebView.uploadMessage = null;
