@@ -4,8 +4,22 @@
 
 package io.flutter.plugins.webviewflutter;
 
+import android.app.Activity;
+import android.content.Context;
+import android.content.Intent;
+import android.net.Uri;
+import android.util.Log;
+import android.webkit.WebChromeClient;
+import android.widget.Toast;
+
+import androidx.annotation.NonNull;
+
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
+import io.flutter.embedding.engine.plugins.activity.ActivityPluginBinding;
 import io.flutter.plugin.common.BinaryMessenger;
+import io.flutter.embedding.engine.plugins.activity.ActivityAware;
+import io.flutter.plugin.common.PluginRegistry;
+
 
 /**
  * Java platform implementation of the webview_flutter plugin.
@@ -15,9 +29,11 @@ import io.flutter.plugin.common.BinaryMessenger;
  * <p>Call {@link #registerWith(Registrar)} to use the stable {@code io.flutter.plugin.common}
  * package instead.
  */
-public class WebViewFlutterPlugin implements FlutterPlugin {
+public class WebViewFlutterPlugin implements FlutterPlugin , ActivityAware , PluginRegistry.ActivityResultListener {
 
   private FlutterCookieManager flutterCookieManager;
+  public static Activity activity;
+  public static Context context;
 
   /**
    * Add an instance of this to {@link io.flutter.embedding.engine.plugins.PluginRegistry} to
@@ -42,6 +58,7 @@ public class WebViewFlutterPlugin implements FlutterPlugin {
    */
   @SuppressWarnings("deprecation")
   public static void registerWith(io.flutter.plugin.common.PluginRegistry.Registrar registrar) {
+    activity = registrar.activity();
     registrar
         .platformViewRegistry()
         .registerViewFactory(
@@ -53,6 +70,7 @@ public class WebViewFlutterPlugin implements FlutterPlugin {
   @Override
   public void onAttachedToEngine(FlutterPluginBinding binding) {
     BinaryMessenger messenger = binding.getBinaryMessenger();
+    context = binding.getApplicationContext();
     binding
         .getPlatformViewRegistry()
         .registerViewFactory(
@@ -69,4 +87,60 @@ public class WebViewFlutterPlugin implements FlutterPlugin {
     flutterCookieManager.dispose();
     flutterCookieManager = null;
   }
+
+  @Override
+  public void onAttachedToActivity(@NonNull ActivityPluginBinding activityPluginBinding) {
+    activity = activityPluginBinding.getActivity();
+    activityPluginBinding.addActivityResultListener(this);
+  }
+
+  @Override
+  public void onDetachedFromActivityForConfigChanges() {
+
+  }
+
+  @Override
+  public void onReattachedToActivityForConfigChanges(@NonNull ActivityPluginBinding activityPluginBinding) {
+    onAttachedToActivity(activityPluginBinding);
+  }
+
+  @Override
+  public void onDetachedFromActivity() {
+    activity = null;
+  }
+
+  @Override
+  public boolean onActivityResult(int i, int i1, Intent intent) {
+
+    if(i == FlutterWebView.REQUEST_SELECT_FILE && intent!=null){
+      if(i1 == Activity.RESULT_OK){
+        if (FlutterWebView.uploadMessage == null)
+          return false;
+        Uri[] results = null;
+        String dataString = intent.getDataString();
+        if (dataString != null) {
+          results = new Uri[]{Uri.parse(dataString)};
+        }
+        FlutterWebView.uploadMessage.onReceiveValue(results);
+        //FlutterWebView.uploadMessage.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(i1, intent));
+        FlutterWebView.uploadMessage = null;
+      }
+      else{
+        FlutterWebView.uploadMessage.onReceiveValue(null);
+        //FlutterWebView.uploadMessage.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(i1, intent));
+        FlutterWebView.uploadMessage = null;
+      }
+    }
+    else{
+      FlutterWebView.uploadMessage.onReceiveValue(null);
+      //FlutterWebView.uploadMessage.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(i1, intent));
+      FlutterWebView.uploadMessage = null;
+    }
+
+    Log.w("flutter","activity result");
+    Toast.makeText(activity.getApplicationContext(),"Hello",Toast.LENGTH_SHORT).show();
+    return true;
+  }
+
+
 }
