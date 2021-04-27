@@ -136,9 +136,6 @@ public class WebViewFlutterPlugin implements FlutterPlugin , ActivityAware , Plu
       //FlutterWebView.uploadMessage.onReceiveValue(WebChromeClient.FileChooserParams.parseResult(i1, intent));
       FlutterWebView.uploadMessage = null;
     }
-
-    Log.w("flutter","activity result");
-    Toast.makeText(activity.getApplicationContext(),"Hello",Toast.LENGTH_SHORT).show();
     return true;
   }
 
